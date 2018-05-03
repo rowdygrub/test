@@ -25,7 +25,7 @@ void *_malloc(size_t size)
       freeList->size = 1000 - sizeof(struct block);
       freeList->free = 1;
       freeList->next = NULL;
-      printf("Memory initialized\n");
+      // printf("Memory initialized\n");
     }
 
     void *result = NULL;
@@ -38,21 +38,21 @@ void *_malloc(size_t size)
     {
       prev = current;
       current = current->next;
-      printf("One block checked\n");
+      // printf("One block checked\n");
     }
 
     if((current->size) == size)
     {
       current->free = 0;
       result = (void*)(++current);
-      printf("Exact fitting block allocated\n");
+      // printf("Exact fitting block allocated\n");
       return result;
     }
     else if((current->size) > (size + sizeof(struct block)))
     {
       split(current,size);
       result = (void*)(++current);
-      printf("Fitting block allocated with a split\n");
+      // printf("Fitting block allocated with a split\n");
       return result;
     }
     return result;
@@ -85,6 +85,7 @@ void _free(void *ptr)
     --current;
     current->free = 1;
     merge();
+    current = NULL;
   }
 }
 

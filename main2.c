@@ -3,7 +3,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "malloc.h"
+#include "malloc.c"
 
 static inline unsigned long long rdtsc (void)
 {
