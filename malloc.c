@@ -2,42 +2,95 @@
 #include <assert.h>
 #include <stddef.h>
 #include "malloc.h"
+#include<stdio.h>
+void initialize();
+
+void merge();
 
 // the big cheat
-static char X[0x100000];
+static char X[1000];
 // current occupied index, next index is the free one
 int index = 0;
 
+struct block{
+  size_t size; /*Carries the size of the block described by it*/
+  int free;  /*This flag is used to know whether the block described by the metadata structure is free or not -- > if free, it is set to 1. Otherwise 0.*/
+  struct block *next; /*Points to the next metadata block*/
+};
 
+struct block *freeList = (void*)X;
 
 void *_malloc(size_t size)
 {
-    void *ptr = malloc ( size );
-    //X[index] = malloc ( size );
-    //printf("_malloc ptr: %p\n",ptr);
-    memcpy(&X[index],ptr,size);
-    index = index + size;
-    //printf("_malloc: %p\n",&X[0]);
+    void *result;
+    struct block *curr,*prev;
+    if(!(freeList->size)){
+      initialize();
+      printf("Memory initialized\n");
+    }
+    curr=freeList;
+    while((((curr->size)<size)||((curr->free)==0))&&(curr->next!=NULL)){
+      prev=curr;
+      curr=curr->next;
+      printf("One block checked\n");
+    }
+    if((curr->size)==size){
+      curr->free=0;
+      result=(void*)(++curr);
+      printf("Exact fitting block allocated\n");
+      return result;
+    }
+    else if((curr->size)>(size+sizeof(struct block))){
+      split(curr,size);
+      result=(void*)(++curr);
+      printf("Fitting block allocated with a split\n");
+      return result;
+    }
+    else{
+     result=NULL;
+     printf("Sorry. No sufficient memory to allocate\n");
+     return result;
+    }
+}
 
-
-
-    return &X;
+void merge(){
+ struct block *curr,*prev;
+ curr = freeList;
+ while((curr->next) != NULL){
+  if((curr->free) && (curr->next->free)){
+   curr->size+=(curr->next->size)+sizeof(struct block);
+   curr->next=curr->next->next;
+  }
+  prev=curr;
+  curr=curr->next;
+ }
 }
 
 void _free(void *ptr)
 {
-    int i;
-    for(i = 0; i < index; i++)
-    {
-      if(&X[i] == ptr)
-      {
-        X[i] = '\0';
-        //printf("free: %c\n",X[i]);
-      }
-    }
-    // free ( ptr );
-    ptr = NULL;
-    //printf("free: %p\n",ptr);
+   if(((void*)X <= ptr) && (ptr <= (void*)(X + 1000))){
+     struct block* curr = ptr;
+     --curr;
+     curr->free = 1;
+     merge();
+   }
+   else printf("Please provide a valid pointer allocated by MyMalloc\n");
+}
+
+void split(struct block *fitting_slot,size_t size){
+   struct block *new=(void*)((void*)fitting_slot+size+sizeof(struct block));
+   new->size=(fitting_slot->size)-size-sizeof(struct block);
+   new->free=1;
+   new->next=fitting_slot->next;
+   fitting_slot->size=size;
+   fitting_slot->free=0;
+   fitting_slot->next=new;
+}
+
+void initialize(){
+   freeList->size = 1000 - sizeof(struct block);
+   freeList->free = 1;
+   freeList->next = NULL;
 }
 
 void *_calloc(size_t nmemb, size_t size)
