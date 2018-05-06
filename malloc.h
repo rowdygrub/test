@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-
-void merge();
+void _merge();
 
 void *_malloc(size_t size);
+
 
 void _free(void *ptr);
 

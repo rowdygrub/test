@@ -4,7 +4,7 @@
 #include "malloc.h"
 
 // the big cheat
-static char X[1000];
+static char X[100000];
 
 struct block{
   size_t size; /*Carries the size of the block described by it*/
@@ -12,92 +12,104 @@ struct block{
   struct block *next; /*Points to the next metadata block*/
 };
 
-struct block *freeList = (void*)X;
-
-// current occupied index, next index is the free one
+struct block *free_list = (void*)X;
 
 
 void *_malloc(size_t size)
 {
-    // start the freelist for the first time
-    if(!(freeList->size))
+    // start the free_list for the first time
+    if(free_list->size == 0)
     {
-      freeList->size = 1000 - sizeof(struct block);
-      freeList->free = 1;
-      freeList->next = NULL;
-      // printf("Memory initialized\n");
+      free_list->size = 1000 - sizeof(struct block);
+      free_list->free = 1;
+      free_list->next = NULL;
     }
 
-    void *result = NULL;
+    void *tmp = NULL;
     struct block *current;
-    struct block *prev;
 
-    current = freeList;
+    // set the free list to current block
+    current = free_list;
 
-    while((((current->size) < size) || ((current->free) == 0)) && (current->next != NULL))
+    // finds the next block to allocate
+    while( current->next != NULL && ((current->size < size) || (current->free == 0))  )
     {
-      prev = current;
+
       current = current->next;
-      // printf("One block checked\n");
     }
 
+    // exact fit
     if((current->size) == size)
     {
       current->free = 0;
-      result = (void*)(++current);
-      // printf("Exact fitting block allocated\n");
-      return result;
+      current++;
+      tmp = current;
+      return tmp;
     }
+    // seperate smaller size block from free list
     else if((current->size) > (size + sizeof(struct block)))
     {
-      split(current,size);
-      result = (void*)(++current);
-      // printf("Fitting block allocated with a split\n");
-      return result;
+      _split(current, size);
+      current++;
+      tmp = current;
+      return tmp;
     }
-    return result;
+    // return NULL if no availiable size
+    return tmp;
 }
 
-void merge()
+void _merge()
 {
- struct block *current,*prev;
- current = freeList;
+  struct block *current;
 
- while((current->next) != NULL)
- {
-  if((current->free) && (current->next->free))
+  current = free_list;
+
+  while(current->next != NULL)
   {
-   current->size += (current->next->size) + sizeof(struct block);
-   current->next = current->next->next;
+    // adds the current and next block's size together
+    // then moves 2 blocks
+    if(current->free && current->next->free)
+    {
+      current->size = current->size + current->next->size + sizeof(struct block);
+      current->next = current->next->next;
+    }
+
+      current = current->next;
   }
-  prev = current;
-  current = current->next;
- }
 }
 
 void _free(void *ptr)
 {
+  struct block* current = ptr;
+  // set the previous header block to free(1) to merge correctly
+  current = current - 1;
+  current->free = 1;
+  _merge();
 
-  // check if the pointer is within the memory block (the big cheat)X
-  if(((void*)X <= ptr) && (ptr <= (void*)(X + 1000)))
-  {
-    struct block* current = ptr;
-    --current;
-    current->free = 1;
-    merge();
-    current = NULL;
-  }
+  current->next = NULL;
+
+  strncpy(ptr,"\0",1);
+  ptr = NULL;
+
+  if(current->next != NULL && ptr != NULL)
+    printf("\nLeak Detected\n");
+
+  current = NULL;
+
 }
 
-void split(struct block *fitting_slot,size_t size)
+void _split(struct block *current_block, size_t size)
 {
-   struct block *new = (void*)((void*)fitting_slot + size + sizeof(struct block));
-   new->size = (fitting_slot->size) - size - sizeof(struct block);
-   new->free = 1;
-   new->next = fitting_slot->next;
-   fitting_slot->size = size;
-   fitting_slot->free = 0;
-   fitting_slot->next = new;
+  // set up new free list
+  struct block *new_free_list = current_block + size + sizeof(struct block);
+  new_free_list->size = current_block->size - size - sizeof(struct block);
+  new_free_list->free = 1;
+  new_free_list->next = current_block->next;
+
+  // update the requested block
+  current_block->size = size;
+  current_block->free = 0;
+  current_block->next = new_free_list;
 }
 
 

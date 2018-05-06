@@ -19,6 +19,7 @@ double diffTime ( struct timespec t0, struct timespec t1 )
 int main ( int argc, char* argv[] )
 {
    {
+    FILE * fp = fopen("output_long.txt","w");
      char* A = NULL;
      struct timespec t0;
      struct timespec t1;
@@ -34,16 +35,19 @@ int main ( int argc, char* argv[] )
         double dt = diffTime ( t0, t1 );
         // might want to print dt out and graph it
         // really long print 100000 times
-        // printf (" %lld\n", dt );
+
+        fprintf (fp," %lld\n", dt );
         if (dt < min)
           min = dt;
         if (dt >max)
           max = dt;
      }
-     printf ( "min = %f max = %f \n", min, max );
+     fprintf (fp, "min = %f max = %f \n", min, max );
+     fclose(fp);
    }
    // try a different kind of clock
    {
+     FILE * fp = fopen("output.txt","w");
      char* A = NULL;
      long long unsigned int t0;
      long long unsigned int t1;
@@ -58,13 +62,14 @@ int main ( int argc, char* argv[] )
         t1 = rdtsc ();
         unsigned long long int dt = t1 - t0;
         // might want to print dt out and graph it
-        printf (" %lld\n", dt );
+        fprintf (fp," %lld\n", dt );
         if (dt < min)
           min = dt;
         if (dt >max)
           max = dt;
      }
-     printf ( "min = %lld max = %lld \n", min, max );
+     fprintf (fp, "min = %lld max = %lld \n", min, max );
+     fclose(fp);
    }
    return 0;
 }

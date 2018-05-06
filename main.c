@@ -12,7 +12,7 @@ int main ( int argc, char* argv[] )
    char* A = NULL;
    char* B = NULL;
 
-   A = (char*) _malloc (10);
+   A = (char*) _malloc (10*sizeof(char));
    A[0] = 'A'; A[1] = 'B'; A[2] = '\0';
 
    B = (char*) _malloc (10);
