@@ -3,13 +3,18 @@
 #include <stddef.h>
 #include "malloc.h"
 
+// to compile
+// gcc main.c or main2.c
+// ./a.out
+
+
 // the big cheat
 static char X[100000];
 
 struct block{
-  size_t size; /*Carries the size of the block described by it*/
-  int free;  /*This flag is used to know whether the block described by the metadata structure is free or not -- > if free, it is set to 1. Otherwise 0.*/
-  struct block *next; /*Points to the next metadata block*/
+  size_t size;
+  int free;
+  struct block *next; 
 };
 
 struct block *free_list = (void*)X;
